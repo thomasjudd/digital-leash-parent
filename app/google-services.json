@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "701661827451",
+    "firebase_url": "https://digitalleash-a334d.firebaseio.com",
+    "project_id": "digitalleash-a334d",
+    "storage_bucket": "digitalleash-a334d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:701661827451:android:1cab397786e2401b",
+        "android_client_info": {
+          "package_name": "com.example.tom.digitalleashparent"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "701661827451-qimrelshd6csaau557og0a701vmalj7c.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.tom.digitalleashparent",
+            "certificate_hash": "f39afd965b0768a442d4a796db2d017d63884cdd"
+          }
+        },
+        {
+          "client_id": "701661827451-3qpr4g7q4nip055hjn19oe29r29hkemr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6er_-Yq0XI6JotWhJT5nUaqnc-udY7lo"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "701661827451-3qpr4g7q4nip055hjn19oe29r29hkemr.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
