@@ -2,12 +2,12 @@ package com.example.tom.digitalleashparent;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.annotation.FloatRange;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -83,6 +83,7 @@ public class ParentFragment extends Fragment implements GoogleApiClient.OnConnec
         latitudeEditText = (EditText) view.findViewById(R.id.latitudeEditText);
         longitudeEditText = (EditText) view.findViewById(R.id.longitudeEditText);
 
+        view.setBackgroundColor(Color.BLUE);
         setOnClicks();
 
         locationRequest = LocationRequest.create();

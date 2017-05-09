@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 
 /**
@@ -19,6 +20,7 @@ import android.widget.ImageView;
 public class StatusFragment extends Fragment {
     private boolean childInBounds;
     private ImageView imageView;
+    private TextView statusText;
     private Button returnFromStatusButton;
     public StatusFragment() {
     }
@@ -29,6 +31,7 @@ public class StatusFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_status, container, false);
         childInBounds = getArguments().getBoolean("childInBounds");
         imageView = (ImageView) view.findViewById(R.id.statusImage);
+        statusText = (TextView) view.findViewById(R.id.statusText);
         returnFromStatusButton = (Button) view.findViewById(R.id.returnFromStatus);
         returnFromStatusButton.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -39,9 +42,13 @@ public class StatusFragment extends Fragment {
         if(childInBounds) {
             imageView.setImageResource(R.drawable.status_success);
             imageView.setBackgroundColor(Color.BLUE);
+            view.setBackgroundColor(Color.BLUE);
+            statusText.setText("Child is within the radius");
         } else {
             imageView.setImageResource(R.drawable.status_fail);
             imageView.setBackgroundColor(Color.RED);
+            view.setBackgroundColor(Color.RED);
+            statusText.setText("Child isn't within the radius");
         }
         return view;
     }
