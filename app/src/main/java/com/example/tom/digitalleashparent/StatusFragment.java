@@ -2,6 +2,7 @@ package com.example.tom.digitalleashparent;
 
 
 import android.annotation.SuppressLint;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -32,15 +33,15 @@ public class StatusFragment extends Fragment {
         returnFromStatusButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                getFragmentManager().beginTransaction().replace(R.id.mainContainer, new ParentFragment());
+                getFragmentManager().beginTransaction().replace(R.id.mainContainer, new ParentFragment()).commit();
             }
         });
         if(childInBounds) {
             imageView.setImageResource(R.drawable.status_success);
-            //TODO background colors
-            //imageView.setBackgroundColor();
+            imageView.setBackgroundColor(Color.BLUE);
         } else {
             imageView.setImageResource(R.drawable.status_fail);
+            imageView.setBackgroundColor(Color.RED);
         }
         return view;
     }

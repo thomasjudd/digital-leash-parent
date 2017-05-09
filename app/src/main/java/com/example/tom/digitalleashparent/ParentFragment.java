@@ -3,8 +3,11 @@ package com.example.tom.digitalleashparent;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.FloatRange;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -33,6 +36,8 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+
+import static android.content.Context.CONNECTIVITY_SERVICE;
 
 
 public class ParentFragment extends Fragment implements GoogleApiClient.OnConnectionFailedListener, GoogleApiClient.ConnectionCallbacks {
@@ -137,7 +142,7 @@ public class ParentFragment extends Fragment implements GoogleApiClient.OnConnec
         }
     }
 
-    private class UpdateUserData extends AsyncTask<JSONObject, Void, String> {
+    /*private class UpdateUserData extends AsyncTask<JSONObject, Void, String> {
         @Override
         protected String doInBackground(JSONObject... params) {
                         URL urlObj;
@@ -171,21 +176,27 @@ public class ParentFragment extends Fragment implements GoogleApiClient.OnConnec
             }
             return null;
         }
-    }
+    }*/
 
     private class GetUserData extends AsyncTask<String, Void, JSONObject> {
         private boolean isChildInBounds(JSONObject jsonObject) {
+            Location loc1 = null;
+            Location loc2 = null;
             try {
                 if(jsonObject.get("child_latitude") == null || jsonObject.get("child_longitude") == null) {
                     return false;
                 } else {
-                    Location loc1 = new Location("");
-                    loc1.setLatitude((Double) jsonObject.get("latitude"));
-                    loc1.setLongitude((Double) jsonObject.get("longitude"));
-                    Location loc2 = new Location("");
+                    loc1 = new Location("Parent Location");
+                    loc1.setLatitude(Float.valueOf((String)jsonObject.get("latitude")));
+                    loc1.setLongitude(Float.valueOf((String)jsonObject.get("longitude")));
+                    loc2 = new Location("Child Location");
                     loc2.setLatitude((Double) jsonObject.get("child_latitude"));
                     loc2.setLongitude((Double) jsonObject.get("child_longitude"));
-                    if(loc1.distanceTo(loc2) < (double)jsonObject.get("radius")) {
+                    double distance = loc1.distanceTo(loc2);
+                    double radius = Float.valueOf((String)jsonObject.get("radius"));
+                    Log.v("distance: " , String.valueOf(distance));
+                    Log.v("radius: " , String.valueOf(radius));
+                    if(Float.valueOf(loc1.distanceTo(loc2)) < Float.valueOf((String)jsonObject.get("radius"))) {
                         return true;
                     }
                 }
@@ -207,6 +218,11 @@ public class ParentFragment extends Fragment implements GoogleApiClient.OnConnec
             else {
                 childInBounds = false;
             }
+            Bundle args = new Bundle();
+            args.putBoolean("childInBounds", childInBounds);
+            StatusFragment newStatus = new StatusFragment();
+            newStatus.setArguments(args);
+            getFragmentManager().beginTransaction().replace(R.id.mainContainer, newStatus).commit();
         }
         @Override
         protected JSONObject doInBackground(String... params) {
@@ -235,8 +251,16 @@ public class ParentFragment extends Fragment implements GoogleApiClient.OnConnec
             return null;
         }
     }
+    public boolean checkConnection() {
+        ConnectivityManager manager = (ConnectivityManager) getActivity().getSystemService(CONNECTIVITY_SERVICE);
+        NetworkInfo info = manager.getActiveNetworkInfo();
+        if (info.isConnected()) {
+            return true;
+        }
+        return false;
+    }
 
-   protected JSONObject getUser() {
+    protected JSONObject getUser() {
         JSONObject jsonObject = new JSONObject();
         try {
             jsonObject.put("user_name", userNameEditText.getText().toString());
@@ -255,8 +279,10 @@ public class ParentFragment extends Fragment implements GoogleApiClient.OnConnec
             jsonObject.put("radius", radiusEditText.getText().toString());
             new CreateUserData().execute(jsonObject);
         } catch (JSONException e) {
+            Toast.makeText(getContext(), "Failed to Created User", Toast.LENGTH_SHORT).show();
             e.printStackTrace();
         }
+        Toast.makeText(getContext(), "Created User", Toast.LENGTH_SHORT).show();
     }
 
     protected void updateUser() {
@@ -271,6 +297,7 @@ public class ParentFragment extends Fragment implements GoogleApiClient.OnConnec
             } catch (JSONException e) {
                 e.printStackTrace();
             }
+            Toast.makeText(getContext(), "Updated User", Toast.LENGTH_SHORT).show();
         }
         else {
             Toast.makeText(getContext().getApplicationContext(), "Can't Update NonExistent User", Toast.LENGTH_SHORT);
@@ -282,8 +309,11 @@ public class ParentFragment extends Fragment implements GoogleApiClient.OnConnec
         createButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                createUser();
-                //getFragmentManager().beginTransaction().replace(R.id.mainContainer, new CreateFragment()).commit();
+                if(checkConnection()) {
+                    createUser();
+                } else {
+                    Toast.makeText(getContext(), "No Network Found", Toast.LENGTH_SHORT).show();
+                }
             }
         });
 
@@ -291,7 +321,11 @@ public class ParentFragment extends Fragment implements GoogleApiClient.OnConnec
         updateButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                updateUser();
+                if(checkConnection()) {
+                    updateUser();
+                } else {
+                    Toast.makeText(getContext(), "No Network Found", Toast.LENGTH_SHORT).show();
+                }
             }
         });
 
@@ -299,22 +333,21 @@ public class ParentFragment extends Fragment implements GoogleApiClient.OnConnec
         statusButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                JSONObject statusJSON = new JSONObject();
-                String[] params = new String[1];
-                String statusString = null;
-                try {
-                    statusJSON.put("user_name", userNameEditText.getText().toString());
-                    statusString = statusJSON.toString();
-                    params[0] = (String) statusJSON.get("user_name");
-                } catch (JSONException e) {
-                    e.printStackTrace();
+                if(checkConnection()) {
+                    JSONObject statusJSON = new JSONObject();
+                    String[] params = new String[1];
+                    String statusString = null;
+                    try {
+                        statusJSON.put("user_name", userNameEditText.getText().toString());
+                        statusString = statusJSON.toString();
+                        params[0] = (String) statusJSON.get("user_name");
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    new GetUserData().execute(params);
+                } else {
+                    Toast.makeText(getContext(), "No Network Found", Toast.LENGTH_SHORT).show();
                 }
-                new GetUserData().execute(params);
-                Bundle args = new Bundle();
-                args.putBoolean("childInBounds", childInBounds);
-                StatusFragment newStatus = new StatusFragment();
-                newStatus.setArguments(args);
-                getFragmentManager().beginTransaction().replace(R.id.mainContainer, newStatus).commit();
             }
         });
     }

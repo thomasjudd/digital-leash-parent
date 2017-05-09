@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item type="id" name="longitudeTextView"/>
+    <item type="id" name="latitudeEditText"/>
+    <item type="id" name="longitudeEditText"/>
+    <item type="id" name="statusButton"/>
+    <item type="id" name="updateButton"/>
+</resources>
