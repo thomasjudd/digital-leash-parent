@@ -40,14 +40,15 @@ public class StatusFragment extends Fragment {
             }
         });
         if(childInBounds) {
+
             imageView.setImageResource(R.drawable.status_success);
-            imageView.setBackgroundColor(Color.BLUE);
-            view.setBackgroundColor(Color.BLUE);
+            imageView.setBackgroundColor(Color.parseColor("#0099C9"));
+            view.setBackgroundColor(Color.parseColor("#0099C9"));
             statusText.setText("Child is within the radius");
         } else {
             imageView.setImageResource(R.drawable.status_fail);
-            imageView.setBackgroundColor(Color.RED);
-            view.setBackgroundColor(Color.RED);
+            imageView.setBackgroundColor(Color.parseColor("#D0263A"));
+            view.setBackgroundColor(Color.parseColor("#D0263A"));
             statusText.setText("Child isn't within the radius");
         }
         return view;

@@ -56,9 +56,11 @@ public class ParentFragment extends Fragment implements GoogleApiClient.OnConnec
     private final int LOCATION_INTERVAL = 1000;
     private Location currentLocation;
 
-
     private boolean childInBounds;
     protected String url = "https://turntotech.firebaseio.com/digitalleash/";
+    private JSONObject userData;
+
+    private String requestType;
 
     public ParentFragment() {
     }
@@ -83,7 +85,7 @@ public class ParentFragment extends Fragment implements GoogleApiClient.OnConnec
         latitudeEditText = (EditText) view.findViewById(R.id.latitudeEditText);
         longitudeEditText = (EditText) view.findViewById(R.id.longitudeEditText);
 
-        view.setBackgroundColor(Color.BLUE);
+        view.setBackgroundColor(Color.parseColor("#0099C9"));
         setOnClicks();
 
         locationRequest = LocationRequest.create();
@@ -99,13 +101,12 @@ public class ParentFragment extends Fragment implements GoogleApiClient.OnConnec
 
         googleApiClient.connect();
 
-        //set default radius
-        //TODO clean this up
         double radius = 1000;
         radiusEditText.setText(String.valueOf(radius));
 
         return view;
     }
+
 
     private class CreateUserData extends AsyncTask<JSONObject, Void, String> {
         @Override
@@ -143,10 +144,10 @@ public class ParentFragment extends Fragment implements GoogleApiClient.OnConnec
         }
     }
 
-    /*private class UpdateUserData extends AsyncTask<JSONObject, Void, String> {
+    private class UpdateUserData extends AsyncTask<JSONObject, Void, String> {
         @Override
         protected String doInBackground(JSONObject... params) {
-                        URL urlObj;
+            URL urlObj;
             try {
                 String urlString = url + params[0].get("user_name") + ".json";
                 urlObj = new URL(urlString);
@@ -177,7 +178,7 @@ public class ParentFragment extends Fragment implements GoogleApiClient.OnConnec
             }
             return null;
         }
-    }*/
+    }
 
     private class GetUserData extends AsyncTask<String, Void, JSONObject> {
         private boolean isChildInBounds(JSONObject jsonObject) {
@@ -209,25 +210,59 @@ public class ParentFragment extends Fragment implements GoogleApiClient.OnConnec
         }
         @Override
         protected void onPostExecute(JSONObject jsonObject) {
-            if(jsonObject == null){
-                Toast.makeText(getContext().getApplicationContext(), "User Data Not Found", Toast.LENGTH_SHORT).show();
-                childInBounds = false;
-            }
-            else if(isChildInBounds(jsonObject)){
-                childInBounds = true;
+            userData = jsonObject;
+            if(userData != null) {
+                if(requestType == "UPDATE") {
+                    updateUser();
+                }
+                else if(requestType == "CREATE") {
+                    Toast.makeText(getContext(), "User Already Exists", Toast.LENGTH_SHORT).show();
+                }
+                else if(requestType == "STATUS") {
+                   try {
+                       if (jsonObject.get("child_latitude") != null) {
+                           if (isChildInBounds(userData)) {
+                               childInBounds = true;
+                           } else {
+                               childInBounds = false;
+                           }
+                           Bundle args = new Bundle();
+                           args.putBoolean("childInBounds", childInBounds);
+                           StatusFragment newStatus = new StatusFragment();
+                           newStatus.setArguments(args);
+                           getFragmentManager().beginTransaction().replace(R.id.mainContainer, newStatus).commit();
+                       } else {
+                           Toast.makeText(getContext().getApplicationContext(), "Child Has Not Checked In", Toast.LENGTH_SHORT).show();
+                       }
+                   } catch (JSONException e) {
+                       Toast.makeText(getContext().getApplicationContext(), "No Child Data Found", Toast.LENGTH_SHORT).show();
+                       e.printStackTrace();
+                   }
+                }
+                else {
+                    Log.e("GetUserData", "Invalid Request Type");
+                }
+
             }
             else {
+                Toast.makeText(getContext().getApplicationContext(), "User Data Not Found", Toast.LENGTH_SHORT).show();
                 childInBounds = false;
+                if (requestType == "CREATE") {
+                    createUser();
+                    Toast.makeText(getContext().getApplicationContext(), "User Created", Toast.LENGTH_SHORT).show();
+                }
+                if (requestType == "UPDATE") {
+                    Toast.makeText(getContext().getApplicationContext(), "User Data Not Found", Toast.LENGTH_SHORT).show();
+                }
+                if(requestType  == "STATUS") {
+                    Toast.makeText(getContext().getApplicationContext(), "User Data Not Found", Toast.LENGTH_SHORT).show();
+                }
             }
-            Bundle args = new Bundle();
-            args.putBoolean("childInBounds", childInBounds);
-            StatusFragment newStatus = new StatusFragment();
-            newStatus.setArguments(args);
-            getFragmentManager().beginTransaction().replace(R.id.mainContainer, newStatus).commit();
         }
         @Override
         protected JSONObject doInBackground(String... params) {
             String urlString = url + params[0] + ".json";
+
             URL url = null;
             try {
                 url = new URL(urlString);
@@ -239,8 +274,15 @@ public class ParentFragment extends Fragment implements GoogleApiClient.OnConnec
                 while((line = reader.readLine()) != null) {
                     result.append(line);
                 }
-                JSONObject response = new JSONObject(result.toString());
-                return response;
+
+                if (result.equals("null")){
+                    Toast.makeText(getContext(), "User Not Found", Toast.LENGTH_LONG).show();
+                    return null;
+                }
+
+                JSONObject responseFromJson = new JSONObject(result.toString());
+
+                return responseFromJson;
 
             } catch (MalformedURLException e) {
                 e.printStackTrace();
@@ -255,20 +297,10 @@ public class ParentFragment extends Fragment implements GoogleApiClient.OnConnec
     public boolean checkConnection() {
         ConnectivityManager manager = (ConnectivityManager) getActivity().getSystemService(CONNECTIVITY_SERVICE);
         NetworkInfo info = manager.getActiveNetworkInfo();
-        if (info.isConnected()) {
+        if (info != null && info.isConnected()) {
             return true;
         }
         return false;
-    }
-
-    protected JSONObject getUser() {
-        JSONObject jsonObject = new JSONObject();
-        try {
-            jsonObject.put("user_name", userNameEditText.getText().toString());
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return jsonObject;
     }
 
     protected void createUser() {
@@ -283,18 +315,17 @@ public class ParentFragment extends Fragment implements GoogleApiClient.OnConnec
             Toast.makeText(getContext(), "Failed to Created User", Toast.LENGTH_SHORT).show();
             e.printStackTrace();
         }
-        Toast.makeText(getContext(), "Created User", Toast.LENGTH_SHORT).show();
     }
 
     protected void updateUser() {
-        if(getUser() != null) {
+        if(userData != null) {
             JSONObject jsonObject = new JSONObject();
             try {
                 jsonObject.put("user_name", userNameEditText.getText().toString());
                 jsonObject.put("latitude", latitudeEditText.getText().toString());
                 jsonObject.put("longitude", longitudeEditText.getText().toString());
                 jsonObject.put("radius", radiusEditText.getText().toString());
-                new CreateUserData().execute(jsonObject);
+                new UpdateUserData().execute(jsonObject);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -305,13 +336,23 @@ public class ParentFragment extends Fragment implements GoogleApiClient.OnConnec
         }
     }
 
+    public void makeFirebaseRESTRequest(String requestOperation) {
+        requestType = requestOperation;
+        //do stuff for get user data
+        String[] params = new String[1];
+        params[0] = userNameEditText.getText().toString();
+
+        //execute asynctask
+        new GetUserData().execute(params);
+    }
+
     public void setOnClicks() {
         //CREATE
         createButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if(checkConnection()) {
-                    createUser();
+                    makeFirebaseRESTRequest("CREATE");
                 } else {
                     Toast.makeText(getContext(), "No Network Found", Toast.LENGTH_SHORT).show();
                 }
@@ -323,7 +364,7 @@ public class ParentFragment extends Fragment implements GoogleApiClient.OnConnec
             @Override
             public void onClick(View v) {
                 if(checkConnection()) {
-                    updateUser();
+                    makeFirebaseRESTRequest("UPDATE");
                 } else {
                     Toast.makeText(getContext(), "No Network Found", Toast.LENGTH_SHORT).show();
                 }
@@ -335,17 +376,7 @@ public class ParentFragment extends Fragment implements GoogleApiClient.OnConnec
             @Override
             public void onClick(View v) {
                 if(checkConnection()) {
-                    JSONObject statusJSON = new JSONObject();
-                    String[] params = new String[1];
-                    String statusString = null;
-                    try {
-                        statusJSON.put("user_name", userNameEditText.getText().toString());
-                        statusString = statusJSON.toString();
-                        params[0] = (String) statusJSON.get("user_name");
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                    new GetUserData().execute(params);
+                    makeFirebaseRESTRequest("STATUS");
                 } else {
                     Toast.makeText(getContext(), "No Network Found", Toast.LENGTH_SHORT).show();
                 }
